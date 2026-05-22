@@ -1,2 +1,5 @@
 .cache/
 compile_commands.json
+Doxyfile
+latex/
+html/

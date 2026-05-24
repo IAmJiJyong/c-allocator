@@ -55,6 +55,7 @@ arena_allocator_destroy(ArenaAllocator* self)
                 free(curr);
                 curr = next;
         }
+        allocator_destroy(self->child_allocator);
 }
 
 static AllocatorInterface arena_allocator_interface = { .alloc   = (alloc_fn)arena_allocator_alloc,

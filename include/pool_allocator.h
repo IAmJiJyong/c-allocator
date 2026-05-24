@@ -3,11 +3,18 @@
 
 #include "allocator.h"
 
+typedef struct PoolChunk PoolChunk;
+struct PoolChunk
+{
+        void*      chunk;
+        PoolChunk* next;
+};
+
 typedef struct PoolAllocator
 {
         AllocatorInterface* interface;
         void*               free_list;
-        void*               chunk;
+        PoolChunk*          chunks;
         size_t              element_size;
         size_t              pool_size;
 } PoolAllocator;

@@ -29,7 +29,7 @@ RELEASE_CFLAGS = \
 RELEASE_LDFLAGS =
 
 # Default mode
-MODE ?= release 
+MODE ?= release
 
 ifeq ($(MODE),debug)
 	CFLAGS = $(DEBUG_CFLAGS)
@@ -88,9 +88,8 @@ build/tests/%: tests/%.c $(STATIC_LIB) include/*.h
 test: dirs $(TEST_BIN)
 	@set -e; \
 	for t in $(TEST_BIN); do \
-		echo "==> running $$t"; \
+		printf "\n==> running %s\n" "$${t##*/}"; \
 		./$$t; \
 	done
-
 clean:
 	rm -rf build/*

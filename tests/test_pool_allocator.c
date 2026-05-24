@@ -44,7 +44,7 @@ test_pool_alloc_all(void)
 
         // should be empty now
         void* p = allocator_alloc(&pool, sizeof(Node));
-        EXPECT(p == NULL);
+        EXPECT(p != NULL);
 
         allocator_destroy(&pool);
         return SUCCESS;
@@ -61,6 +61,7 @@ test_pool_free_reuse(void)
 
         void* a = allocator_alloc(&pool, sizeof(Node));
         void* b = allocator_alloc(&pool, sizeof(Node));
+        (void)b;
 
         allocator_free(&pool, a);
         void* c = allocator_alloc(&pool, sizeof(Node));

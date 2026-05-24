@@ -1,72 +1,80 @@
-# Memory Allocators Project
+# C Memory Allocators Library
 
-This project provides a collection of custom memory allocators implemented in C. It aims to offer various strategies for memory management, suitable for different use cases and performance requirements.
+A lightweight, polymorphic memory management library implemented in C.
 
-## Features
+This project provides a unified interface for various memory allocation strategies, allowing for easy swapping and composition of allocators in C applications.
 
-- **Arena Allocator**: Efficient allocation and deallocation of memory in a large pre-allocated buffer. Ideal for scenarios where many small objects are allocated and deallocated together.
-- **Fixed Buffer Allocator**: Manages memory within a fixed-size buffer, providing fast allocations for objects of a predefined size.
-- **Malloc Allocator**: A wrapper around the standard `malloc`/`free` functions, providing a consistent `AllocatorInterface`.
-- **Page Allocator**: (Potentially) An allocator that manages memory at the page level. (Further details would require examining `page_allocator.c` and `page_allocator.h`).
+## Key Features
 
-The project includes a generic `AllocatorInterface` to allow for polymorphic use of different allocator implementations.
+- **Polymorphic Interface (`AllocatorInterface`)**: Decouples memory management strategies from application logic.
+- **Support for Multiple Allocators**:
+  - `ArenaAllocator`: Efficient bulk allocation and destruction.
+  - `FixedBufferAllocator`: Fast allocation within a fixed-size buffer.
+  - `MallocAllocator`: Standard heap allocation wrapper.
+  - `PageAllocator`: Page-aligned memory management.
 
-## Building the Project
+## Project Structure
 
-The project uses a `Makefile` for compilation.
+- `include/`: Header files defining the `AllocatorInterface` and specific allocator implementations.
+- `src/`: Source code for allocator implementations.
+- `tests/`: Unit test suite to verify correctness.
+- `build/`: Output directory for compiled libraries and test binaries.
 
-To build the static and shared libraries:
+## Building and Testing
+
+The project requires `make` and a C compiler.
+
+### Build Library
 
 ```bash
 make all
 ```
 
-This will generate `libmemalloc.a` (static library) and `libmemalloc.so` (shared library) in the `build/` directory.
+Generates `libmemalloc.a` (static) and `libmemalloc.so` (shared) in the `build/` directory.
 
-## Running Tests
-
-To build and run the test suite:
+### Run Tests
 
 ```bash
 make test
 ```
 
-This will compile the test executables and run them. The tests are designed to verify the correctness and functionality of each allocator implementation.
-
-## Directory Structure
-
-- `include/`: Header files for the allocator interfaces and implementations.
-- `src/`: Source code files for the allocator implementations.
-- `tests/`: Unit tests for each allocator.
-- `build/`: Output directory for compiled objects, libraries, and test executables.
-- `docs/`: Doxygen generated documentation (html and latex)
+Compiles and executes the test suite to verify functionality.
 
 ## Usage
 
-To use the allocators in your project, include the relevant header files from the `include/` directory and link against `libmemalloc.a` or `libmemalloc.so`.
+The library uses a common interface for all allocators. All allocator structures must start with a pointer to their `AllocatorInterface`.
 
-Example (assuming you want to use the `malloc_allocator`):
+### Example: Using the Malloc Allocator
 
 ```c
 #include "malloc_allocator.h"
-#include "allocator.h" // For AllocatorInterface and convenience functions
+#include "allocator.h"
+#include <stdio.h>
 
 int main() {
-    malloc_allocator_t my_allocator;
-    malloc_allocator_init(&my_allocator);
+    MallocAllocator allocator;
+    malloc_allocator_init(&allocator);
 
-    // Use the generic AllocatorInterface
-    void* data = allocator_alloc((void*)&my_allocator, 100);
-    // ... use data ...
-    allocator_free((void*)&my_allocator, data);
+    // Allocating memory using the generic interface
+    void* ptr = allocator_alloc(&allocator, 128);
 
-    malloc_allocator_destroy(&my_allocator);
+    if (!ptr) {
+        fprintf(stderr, "allocation failed\n");
+        return 1;
+    }
+    // Use the allocated memory
+    //...
+    allocator_free(&allocator, ptr);
+
+    allocator_destroy(&allocator);
     return 0;
 }
 ```
 
-(Note: The example usage might need adjustment based on the exact API of each allocator, especially regarding initialization and destruction.)
+## Contributing
+
+Contributions are welcome. Please ensure that all new allocator implementations conform to the `AllocatorInterface` signature.
 
 ## License
 
-MIT License
+This project is licensed under the MIT License. See the `LICENSE` file for details.

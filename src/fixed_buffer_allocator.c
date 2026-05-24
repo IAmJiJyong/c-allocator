@@ -7,11 +7,9 @@ fixed_buffer_allocator_alloc(FixedBufferAllocator* self, size_t size)
         if (size == 0)
                 return NULL;
 
-        // 為了安全與硬體效能，強制將當前游標向上對齊到 8 位元組
         size_t aligned_offset = aligned_mem(self->offset, 8);
-
         if (aligned_offset + size > self->capacity) {
-                return NULL; // 空間不足，直接回傳 NULL (OutOfMemory)
+                return NULL;
         }
 
         void* ptr    = (char*)self->buffer + aligned_offset;

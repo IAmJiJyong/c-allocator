@@ -2,35 +2,42 @@
 
 A lightweight, polymorphic memory management library implemented in C.
 
-This project provides a unified interface for various memory allocation strategies, allowing for easy swapping and composition of allocators in C applications.
+This project provides a unified interface (`AllocatorInterface`) for various memory allocation strategies. It allows developers to swap or compose different allocators—such as Arena, Pool, or Fixed Buffer allocators—depending on specific application needs (e.g., performance, memory constraints, or object lifetime management) without changing high-level logic.
 
 ## Key Features
 
-- **Polymorphic Interface (`AllocatorInterface`)**: Decouples memory management strategies from application logic.
-- **Support for Multiple Allocators**:
-  - `ArenaAllocator`: Efficient bulk allocation and destruction.
-  - `FixedBufferAllocator`: Fast allocation within a fixed-size buffer.
-  - `MallocAllocator`: Standard heap allocation wrapper.
-  - `PageAllocator`: Page-aligned memory management.
+- **Polymorphic Interface**: All allocators implement a common `AllocatorInterface` (`alloc`, `resize`, `free`, `destroy`), enabling generic memory management code.
+- **Multiple Allocation Strategies**:
+  - **Arena Allocator**: Fast, bulk allocation with single-step deallocation. Ideal for short-lived task-based memory.
+  - **Pool Allocator**: O(1) allocation and deallocation for fixed-size objects, minimizing fragmentation.
+  - **Fixed Buffer Allocator**: Allocates within a pre-defined buffer (e.g., on the stack or a global array). No dynamic heap usage.
+  - **Malloc Allocator**: A thin wrapper around the standard library's `malloc` and `free`.
+  - **Page Allocator**: Manages memory in OS-aligned pages.
+- **Composition**: Easily use one allocator as a backing store for another (e.g., an Arena backed by a Malloc or Page allocator).
+- **Debug-Friendly**: Integrated support for AddressSanitizer and unit testing.
 
 ## Project Structure
 
-- `include/`: Header files defining the `AllocatorInterface` and specific allocator implementations.
-- `src/`: Source code for allocator implementations.
-- `tests/`: Unit test suite to verify correctness.
-- `build/`: Output directory for compiled libraries and test binaries.
+- `include/`: Header files defining the core interface and specific allocator implementations.
+- `src/`: Implementation of the allocation logic.
+- `tests/`: Comprehensive unit tests for every allocator.
+- `build/`: Output directory for object files, static libraries (`.a`), and shared libraries (`.so`).
 
 ## Building and Testing
 
-The project requires `make` and a C compiler.
+The project uses `make` for building and testing.
 
-### Build Library
+### Build the Library
 
 ```bash
+# Default build (release mode)
 make all
+
+# Debug build (with symbols and AddressSanitizer)
+make debug
 ```
 
-Generates `libmemalloc.a` (static) and `libmemalloc.so` (shared) in the `build/` directory.
+This generates `libmemalloc.a` and `libmemalloc.so` in the `build/` directory.
 
 ### Run Tests
 
@@ -38,43 +45,36 @@ Generates `libmemalloc.a` (static) and `libmemalloc.so` (shared) in the `build/`
 make test
 ```
 
-Compiles and executes the test suite to verify functionality.
+## Quick Start
 
-## Usage
-
-The library uses a common interface for all allocators. All allocator structures must start with a pointer to their `AllocatorInterface`.
-
-### Example: Using the Malloc Allocator
+The following example demonstrates how to use the `ArenaAllocator` backed by the standard `MallocAllocator`.
 
 ```c
+#include "arena_allocator.h"
 #include "malloc_allocator.h"
-#include "allocator.h"
 #include <stdio.h>
 
 int main() {
-    MallocAllocator allocator;
-    malloc_allocator_init(&allocator);
+    // 1. Initialize a backing allocator (standard malloc)
+    MallocAllocator backing;
+    malloc_allocator_init(&backing);
 
-    // Allocating memory using the generic interface
-    void* ptr = allocator_alloc(&allocator, 128);
+    // 2. Initialize an Arena with a 4KB region size, using the malloc allocator
+    ArenaAllocator arena;
+    arena_allocator_init(&arena, &backing, 4096);
 
-    if (!ptr) {
-        fprintf(stderr, "allocation failed\n");
-        return 1;
-    }
-    // Use the allocated memory
-    //...
-    allocator_free(&allocator, ptr);
+    // 3. Use the generic interface to allocate memory
+    void* p1 = allocator_alloc(&arena, 128);
+    void* p2 = allocator_alloc(&arena, 512);
 
-    allocator_destroy(&allocator);
+    // Note: With an Arena, you don't need to free individual pointers.
+    // Calling destroy on the arena will release all managed memory at once.
+    
+    allocator_destroy(&arena);
     return 0;
 }
 ```
 
-## Contributing
-
-Contributions are welcome. Please ensure that all new allocator implementations conform to the `AllocatorInterface` signature.
-
 ## License
 
-This project is licensed under the MIT License. See the `LICENSE` file for details.
+This project is licensed under the [MIT License](LICENSE).
